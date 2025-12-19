@@ -1,0 +1,375 @@
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Entry</title>
+  <style>
+    :root{--bg:#0b1020;--border:rgba(255,255,255,.12);--text:#e5e7eb;--muted:#a7b0c0;--primary:#6366f1;--primary2:#22c55e;--danger:#ef4444;--shadow:0 18px 60px rgba(0,0,0,.35);--radius:18px;}
+    *{box-sizing:border-box} html{color-scheme:dark}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--text);
+      background:radial-gradient(1200px 600px at 20% -10%, rgba(99,102,241,.45), transparent 60%),
+      radial-gradient(900px 600px at 100% 0%, rgba(34,197,94,.35), transparent 55%),
+      radial-gradient(900px 700px at 40% 110%, rgba(239,68,68,.22), transparent 60%),var(--bg);
+      min-height:100vh;padding:22px;}
+    .container{max-width:920px;margin:0 auto}
+    .header{padding:18px;border:1px solid var(--border);border-radius:var(--radius);
+      background:linear-gradient(135deg, rgba(99,102,241,.22), rgba(34,197,94,.14));box-shadow:var(--shadow);}
+    .title{display:flex;align-items:center;gap:12px}
+    .badge{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg, rgba(99,102,241,.9), rgba(34,197,94,.75));
+      display:flex;align-items:center;justify-content:center;font-weight:800}
+    h1{font-size:22px;margin:0} .sub{color:var(--muted);font-size:13px;margin-top:6px}
+    .card{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));box-shadow:var(--shadow);padding:18px;}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media(max-width:720px){.row{grid-template-columns:1fr}}
+    label{display:block;margin-top:12px;font-weight:700;color:#dbe3ff;font-size:13px}
+    input,select,button{width:100%;padding:12px;margin-top:8px;border-radius:14px;border:1px solid var(--border);
+      background:rgba(255,255,255,.06);color:var(--text);outline:none;font-size:14px}
+    input::placeholder{color:rgba(229,231,235,.55)} input[readonly]{background:rgba(255,255,255,.03);color:#e7ecff}
+    .hint{margin-top:6px;color:var(--muted);font-size:12.5px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .btn{border:none;cursor:pointer;font-weight:800;letter-spacing:.2px}
+    .btn-primary{background:linear-gradient(135deg, rgba(99,102,241,.95), rgba(99,102,241,.65))}
+    .btn-success{background:linear-gradient(135deg, rgba(34,197,94,.95), rgba(34,197,94,.65))}
+    .btn-ghost{background:rgba(255,255,255,.08);border:1px solid var(--border)}
+    .btn-danger{background:linear-gradient(135deg, rgba(239,68,68,.95), rgba(239,68,68,.65))}
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;border:1px solid var(--border);
+      background:rgba(255,255,255,.05);color:var(--muted);font-size:12.5px;margin-top:12px;}
+    .dot{width:8px;height:8px;border-radius:50%;background:rgba(34,197,94,.9);box-shadow:0 0 0 4px rgba(34,197,94,.18)}
+    .msg{margin-top:12px;border-radius:14px;padding:12px;border:1px solid var(--border);background:rgba(255,255,255,.05);
+      color:var(--text);font-size:13.5px;line-height:1.35;white-space:pre-line}
+    .msg.err{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.10)}
+    .msg.ok{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.10)}
+    .mini{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+    select{appearance:none;-webkit-appearance:none;-moz-appearance:none}
+    select option{background:#fff;color:#111827}
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">
+      <div class="badge">E</div>
+      <div>
+        <h1>Expense Entry</h1>
+        <div class="sub">กรอกได้หลายรายการต่อเนื่อง + ถ่ายรูป/แนบไฟล์ + เก็บวันที่บิล</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div class="card" id="step1">
+    <label>UserKey (Phone/ID)</label>
+    <input id="userKey" placeholder="กรอก UserKey แล้วกด Enter">
+    <div class="hint">Login ครั้งเดียวแล้วกรอกหลายใบได้ต่อเนื่อง</div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="login()">เข้าสู่ระบบ</button>
+    </div>
+    <div id="step1Msg" class="msg err" style="display:none;"></div>
+  </div>
+
+  <!-- Form -->
+  <div class="card" id="step2" style="display:none;">
+    <div class="pill"><span class="dot"></span><span id="sessionText">Logged in</span></div>
+
+    <label>ข้อมูลผู้ใช้</label>
+    <input id="userInfo" readonly>
+
+    <div class="row">
+      <div>
+        <label>กลุ่มค่าใช้จ่าย</label>
+        <select id="group" onchange="loadDetails()"></select>
+      </div>
+      <div>
+        <label>รายละเอียด</label>
+        <select id="detail"></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>จำนวนชิ้นที่ซื้อ</label>
+        <input id="qty" type="number" min="1" placeholder="เช่น 1">
+      </div>
+      <div>
+        <label>จำนวนบาททั้งหมด</label>
+        <input id="amount" type="number" min="1" placeholder="เช่น 1000">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>เลขที่บิล (Tax Invoice)</label>
+        <input id="tax" placeholder="เช่น INV-1234">
+      </div>
+      <div>
+        <label>วันที่บิล (Invoice Date)</label>
+        <input id="invoiceDate" type="date">
+        <div class="hint">เลือกวันที่บนใบเสร็จ/ใบกำกับภาษี</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>ถ่ายรูปใบเสร็จ (กล้อง)</label>
+        <input id="cam" type="file" accept="image/*" capture="environment">
+        <div class="hint">ระบบบีบอัดรูปอัตโนมัติ</div>
+      </div>
+      <div>
+        <label>แนบไฟล์ (รูป/PDF)</label>
+        <input id="file" type="file" accept="image/*,application/pdf">
+        <div class="hint">PDF จำกัด ~10MB</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button id="btnSubmit" class="btn btn-success" onclick="submitForm()">บันทึกรายการนี้</button>
+      <button class="btn btn-ghost" onclick="clearExpenseOnly()">ล้างฟอร์ม</button>
+      <button class="btn btn-danger" onclick="logout()">เปลี่ยน UserKey</button>
+    </div>
+
+    <div id="msg" class="msg" style="display:none;"></div>
+
+    <div class="mini">
+      <div>บันทึกใน session นี้: <b id="countSaved">0</b> รายการ</div>
+      <div>เลขรายการล่าสุด: <b id="lastEntry">-</b></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== IMPORTANT: ตั้งค่า 2 จุดนี้ ======
+  const API_URL = "https://script.google.com/macros/s/AKfycbzIEsb6-JNsiMHdA-IDp-oncDmHB3cqBw4XncQFERHn9VfXmW4UnKqBw7WiiSZ9ARso/exec"; // เช่น https://script.google.com/macros/s/xxx/exec
+  const API_KEY = "515f18b24c53423c9561c1ea3a88fb5d6a2717dfeffd488ab5398bdc11e26873";
+
+  const COMPRESS = { maxW: 1600, maxH: 1600, quality: 0.72 };
+  let _userKey="", _userText="", _saving=false, _savedCount=0;
+
+  window.onload = () => {
+    document.getElementById('userKey').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter'){ e.preventDefault(); login(); }
+    });
+  };
+
+  async function apiGet(action, params = {}) {
+    const url = new URL(API_URL);
+    url.searchParams.set("action", action);
+    url.searchParams.set("key", API_KEY);
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+    const res = await fetch(url.toString(), { method: "GET" });
+    return JSON.parse(await res.text());
+  }
+
+  async function apiPost(action, payloadObj) {
+    const body = JSON.stringify({ action, key: API_KEY, ...payloadObj });
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body
+    });
+    return JSON.parse(await res.text());
+  }
+
+  function showStep1Msg(text, isError=true){
+    const el = document.getElementById('step1Msg');
+    if(!text){ el.style.display="none"; el.innerText=""; return; }
+    el.style.display="block";
+    el.className = "msg " + (isError ? "err" : "");
+    el.innerText = text;
+  }
+
+  function showMsg(text, isOk=false, isErr=false){
+    const el = document.getElementById('msg');
+    el.style.display="block";
+    el.className = "msg " + (isOk ? "ok" : (isErr ? "err" : ""));
+    el.innerText = text;
+  }
+
+  function hideMsg(){
+    const el = document.getElementById('msg');
+    el.style.display="none"; el.innerText=""; el.className="msg";
+  }
+
+  function setSubmitEnabled(enabled){
+    document.getElementById('btnSubmit').disabled = !enabled;
+  }
+
+  function setInvoiceDateToday(){
+    const el = document.getElementById('invoiceDate');
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const dd = String(d.getDate()).padStart(2,'0');
+    el.value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  async function login(){
+    const userKey = document.getElementById('userKey').value.trim();
+    showStep1Msg("");
+    if(!userKey){ showStep1Msg("กรุณากรอก UserKey", true); return; }
+
+    try{
+      const groupsRes = await apiGet("groups");
+      if(!groupsRes.ok) throw new Error(groupsRes.message || "load groups failed");
+
+      const loginRes = await apiPost("login", { userKey });
+      if(!loginRes.ok){ showStep1Msg(loginRes.message || "ไม่พบผู้ใช้", true); return; }
+
+      _userKey = userKey;
+      _userText = `${loginRes.data.userName} | ${loginRes.data.area} | ${loginRes.data.role}`;
+      document.getElementById('userInfo').value = _userText;
+      document.getElementById('sessionText').innerText = `Logged in: ${_userText}`;
+
+      _savedCount = 0;
+      document.getElementById('countSaved').innerText = "0";
+      document.getElementById('lastEntry').innerText = "-";
+
+      document.getElementById('group').innerHTML =
+        '<option value="" disabled selected>--เลือก--</option>' +
+        (groupsRes.groups||[]).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
+
+      document.getElementById('detail').innerHTML =
+        '<option value="" disabled selected>--เลือก--</option>';
+
+      setInvoiceDateToday();
+
+      document.getElementById('step1').style.display = "none";
+      document.getElementById('step2').style.display = "block";
+      hideMsg();
+    } catch(err){
+      showStep1Msg("Login/API error: " + (err.message || err), true);
+    }
+  }
+
+  async function loadDetails(){
+    const g = document.getElementById('group').value;
+    const res = await apiGet("details", { group: g });
+    document.getElementById('detail').innerHTML =
+      '<option value="" disabled selected>--เลือก--</option>' +
+      (res.details||[]).map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+  }
+
+  async function submitForm(){
+    if(_saving) return;
+    _saving = true;
+    setSubmitEnabled(false);
+    showMsg("กำลังบันทึก... (ถ้ามีรูป ระบบจะบีบอัดก่อนอัปโหลด)", false, false);
+
+    try{
+      const camInput  = document.getElementById('cam');
+      const fileInput = document.getElementById('file');
+      const picked =
+        (camInput.files && camInput.files.length) ? camInput.files[0] :
+        (fileInput.files && fileInput.files.length) ? fileInput.files[0] :
+        null;
+
+      let attachment = null;
+      if(picked){
+        if (picked.type && picked.type.startsWith("image/")){
+          const compressed = await compressToJpegBase64(picked, COMPRESS.maxW, COMPRESS.maxH, COMPRESS.quality);
+          attachment = { name: "receipt.jpg", mimeType: "image/jpeg", base64: compressed };
+        } else {
+          const maxMB = 10;
+          if (picked.size > maxMB * 1024 * 1024) throw new Error(`ไฟล์ใหญ่เกิน ${maxMB}MB`);
+          const dataUrl = await toBase64(picked);
+          attachment = { name: picked.name, mimeType: picked.type || "application/pdf", base64: dataUrl.split(",")[1] };
+        }
+      }
+
+      const payload = {
+        userKey: _userKey,
+        expenseGroup: document.getElementById('group').value,
+        expenseDetail: document.getElementById('detail').value,
+        qty: document.getElementById('qty').value,
+        amountTotal: document.getElementById('amount').value,
+        taxInvoiceNo: document.getElementById('tax').value,
+        invoiceDate: document.getElementById('invoiceDate').value,
+        attachment
+      };
+
+      const res = await apiPost("submit", { payload });
+      if(res.ok){
+        _savedCount++;
+        document.getElementById('countSaved').innerText = String(_savedCount);
+        document.getElementById('lastEntry').innerText = res.entryNo || "-";
+        showMsg(`บันทึกสำเร็จ ✅\nเลขรายการ: ${res.entryNo}\nกรอกใบถัดไปได้เลย`, true, false);
+        clearExpenseOnly();
+      } else {
+        showMsg(`ผิดพลาด: ${res.message || "ไม่สามารถบันทึกได้"}`, false, true);
+      }
+    } catch(err){
+      showMsg("ผิดพลาด: " + (err.message || err), false, true);
+    } finally {
+      _saving = false;
+      setSubmitEnabled(true);
+    }
+  }
+
+  function clearExpenseOnly(){
+    document.getElementById('group').selectedIndex = 0;
+    document.getElementById('detail').innerHTML = '<option value="" disabled selected>--เลือก--</option>';
+    document.getElementById('qty').value = "";
+    document.getElementById('amount').value = "";
+    document.getElementById('tax').value = "";
+    document.getElementById('cam').value = "";
+    document.getElementById('file').value = "";
+    setInvoiceDateToday();
+  }
+
+  function logout(){
+    _userKey=""; _userText="";
+    document.getElementById('userKey').value = "";
+    document.getElementById('step2').style.display = "none";
+    document.getElementById('step1').style.display = "block";
+    showStep1Msg("");
+    hideMsg();
+  }
+
+  function toBase64(file){
+    return new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result);
+      r.onerror=reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function compressToJpegBase64(file, maxW, maxH, quality){
+    const img = await loadImageFromFile(file);
+    let w = img.naturalWidth || img.width;
+    let h = img.naturalHeight || img.height;
+
+    const ratio = Math.min(maxW / w, maxH / h, 1);
+    const nw = Math.round(w * ratio);
+    const nh = Math.round(h * ratio);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = nw; canvas.height = nh;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0,0,nw,nh);
+    ctx.drawImage(img, 0, 0, nw, nh);
+
+    const dataUrl = canvas.toDataURL("image/jpeg", quality);
+    return dataUrl.split(",")[1];
+  }
+
+  function loadImageFromFile(file){
+    return new Promise((resolve,reject)=>{
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{ URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = (e)=>{ URL.revokeObjectURL(url); reject(e); };
+      img.src = url;
+    });
+  }
+
+  function esc(s){
+    return String(s ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[m]));
+  }
+</script>
+</body>
+</html>
